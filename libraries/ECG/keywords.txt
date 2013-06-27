@@ -1,0 +1,3 @@
+ECGSample	KEYWORD1
+setValue	KEYWORD2
+getValue	KEYWORD2
