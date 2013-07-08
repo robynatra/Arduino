@@ -28,9 +28,9 @@ struct Olimexino328_packet
 #define NUMCHANNELS 6
 #define HEADERLEN 4
 #define PACKETLEN (NUMCHANNELS * 2 + HEADERLEN + 1)
-#define SAMPFREQ 1                      // ADC sampling rate 256
+//#define SAMPFREQ 1                      // ADC sampling rate 256
 //#define SAMPFREQ 24                      // ADC sampling rate 256
-//#define SAMPFREQ 256                      // ADC sampling rate 256
+#define SAMPFREQ 256                      // ADC sampling rate 256
 #define TIMER2VAL (1024/(SAMPFREQ))       // Set 256Hz sampling frequency                    
 #define LED1  13
 #define CAL_SIG 9
@@ -47,12 +47,16 @@ volatile unsigned int ADC_Value = 0;	  //ADC current value
 
 // Framing variables
 Framing framing;                          // JD: Add this framing object to package up data for transfer
-char type_rtp = '1';
-char type_rtsp = '2';
-char type_ack = '3';
-char type_message = '4';
+const char type_rtp = '1';
+const char type_rtsp = '2';
+const char type_ack = '3';
+const char type_message = '4';
 
-// RTSP constants
+// IO constants/variables
+int io_taskstarted = 0;
+
+
+// RTSP constants/variables
 int rtsp_taskstarted = 0;
 Scheduler scheduler = Scheduler();
 
@@ -72,7 +76,7 @@ Scheduler scheduler = Scheduler();
 // RTSP messaging variables
 int RTSPCommandCount        = 0;
 int RSTPCurrentState        = RTSPState_Init;
-volatile unsigned char RTSP_BUF[1000];  //The transmission packet
+volatile unsigned char RTSP_RXBUF[1000];  // This buffer contains RTSP commands from clients
 
 //~~~~~~~~~~
 // Functions
@@ -151,17 +155,15 @@ void setup() {
  FlexiTimer2::start();
  
  // Serial Port
- Serial.begin(57600);
+ Serial.begin(115200);
+ //Serial.begin(57600);
  //Set speed to 57600 bps
  
   framing.setTimout(0.1);
 
  // MCU sleep mode = idle.
  //outb(MCUCR,(inp(MCUCR) | (1<<SE)) & (~(1<<SM0) | ~(1<<SM1) | ~(1<<SM2)));
- 
 
- 
- 
  interrupts();  // Enable all interrupts after initialization has been completed
 }
 
@@ -184,23 +186,15 @@ void Timer2_Overflow_ISR()
     TXBuf[((2*CurrentCh) + HEADERLEN + 1)] = ((unsigned char)(ADC_Value & 0x00FF));	// Write Low Byte
   }
 
-	 
-  // Send Packet
-  /*
-  for(TXIndex=0;TXIndex<17;TXIndex++){
-    Serial.write(TXBuf[TXIndex]);
-    //Serial.write("hi\n");
-    //Serial.write(
-    
-  }*/
-  
   unsigned char toSend[17];
   //TxBuff
   for(int i=0;i<PACKETLEN;i++)
   toSend[i] = TXBuf[i];
   
+  // Send the datat to the client if requested.
+  // Could change this to a playout buffer
+  if(RSTPCurrentState==RTSPState_Playing)
   framing.sendFramedData(toSend,17, type_rtp);
-  
   
   // Increment the packet counter
   TXBuf[3]++;			
@@ -228,6 +222,11 @@ void loop() {
   {
     rtsp_taskstarted=1;
     scheduler.schedule(rtsp_task,1000);
+  }
+  if(io_taskstarted==0)
+  {
+    io_taskstarted=1;
+    scheduler.schedule(io_task,100);
   }
 
  __asm__ __volatile__ ("sleep");
@@ -259,4 +258,65 @@ void rtsp_task()
     }
   }
   scheduler.schedule(rtsp_task,1000);
+}
+
+
+// Task
+void io_task() 
+// This task handles commands sent from the phone
+// It deframes them and sends them to the appropriate device
+{
+  unsigned char input_buff[100];
+  unsigned char output_buff[100];
+  int output_length, input_length, crc_valid, framing_seq, dataType;
+
+  //the values 1, 2, 3 have been sent through serial
+  framing.receiveFramedData(input_buff, input_length, crc_valid, framing_seq, dataType);
+  //the input buffer has been filled with incoming serial data
+
+ if((crc_valid!=0) && (input_length>0))
+  {
+    // To Send a message
+    //unsigned char message[ ] = "RTSP/1.0 200 OK\n";
+    //framing.sendFramedData(message,1, type_message);
+
+    //unsigned char message[ ] = "abcd";
+    //framing.sendFramedData(message,4, type_message);
+
+    // Frame received correctly - send an ack with the sequence number of the frame being acked
+    //unsigned char message[] = {framing_seq>>8,  framing_seq};
+    //framing.sendFramedData(message,2, type_ack);
+    
+    switch(dataType)
+    {
+      case type_rtp:
+      {
+        //unsigned char message[ ] = "rtp";
+        //framing.sendFramedData(message,3, type_message);
+
+        unsigned char message[] = {framing_seq>>8,  framing_seq, 'r'};
+        framing.sendFramedData(message,message.length, type_ack);
+      }
+      case type_rtsp:
+      {
+        unsigned char message[] = {framing_seq>>8,  framing_seq, 'rtsp'};
+        framing.sendFramedData(message,6, type_ack);
+        
+        //unsigned char message[ ] = "rtsp";
+        //framing.sendFramedData(message,4, type_message);
+      }
+      case type_ack:
+      {
+        //unsigned char message[ ] = "ack";
+        //framing.sendFramedData(message,3, type_message);
+      }
+      case type_message:
+      {
+        unsigned char message[ ] = "message";
+        framing.sendFramedData(message,7, type_message);
+      }
+    }
+  }
+
+  scheduler.schedule(io_task,100);
 }

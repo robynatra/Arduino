@@ -26,6 +26,8 @@ const unsigned char Framing::m_STX=0x02;
 const unsigned char Framing::m_ETX=0x03;
 const unsigned char Framing::m_DLE=0x10;
 
+int iSendSeq;
+
 //Constructor for Framing
 Framing::Framing() {
 	m_timeout=0.05;
@@ -36,20 +38,40 @@ void Framing::setTimout(double timeout) {
 	m_timeout=timeout;
 }
 
+//Private method for increasing sequence number
+void increaseSequenceNumber() 
+{
+	if(iSendSeq<32767)
+	iSendSeq++;
+	else
+	iSendSeq = 0;
+}
 
 
 //Public method for framing data
 void Framing::sendFramedData(unsigned char* data, int length, char type) {
   int buf_index=0;
   unsigned char framed_data[100];
-  
+
   CRC_16 createCRC;
-  
+
   //Send start flag
   framed_data[buf_index]=m_DLE;
   buf_index++;
   framed_data[buf_index]=m_STX;
   buf_index++;
+  
+  increaseSequenceNumber();
+  
+	//Put in sequence number hi byte
+	framed_data[buf_index] = (byte) (iSendSeq>>8);
+	buf_index++;
+	createCRC.next_databyte((byte) (iSendSeq>>8));
+
+	//Put in sequence number lo byte
+	framed_data[buf_index] = (byte) (iSendSeq);
+	buf_index++;
+	createCRC.next_databyte((byte) (iSendSeq));
   
   //Put in type unsigned char
   framed_data[buf_index] = type;
@@ -103,7 +125,7 @@ void Framing::sendFramedData(unsigned char* data, int length, char type) {
 
 //Public method for unframing and returning data
 //Returns 1 if CRC valid, 0 if no data was found, and -1 if invalid CRC was calculated
-void Framing::receiveFramedData(unsigned char* data, int& length, int& crc_valid) {
+void Framing::receiveFramedData(unsigned char* data, int& length, int& crc_valid, int& seq, int& dataType) {
 	unsigned char newbyte, oldbyte;
 	crc_valid=0;
 	
@@ -143,10 +165,15 @@ void Framing::receiveFramedData(unsigned char* data, int& length, int& crc_valid
 						}
 						if(checkCRC.returnCRC_reset()==0x00) {
                 			crc_valid=1;
+							seq = (int)(data[0]<<8) + (int)(data[1]);
+							dataType = (int)data[2];
 							return;
 						}
 						else {
+						// i think this is always called..
 							crc_valid=-1;
+							seq = (int)(data[0]<<8) + (int)(data[1]);
+							dataType = (int)data[2];
 							return;
 						}
 					}

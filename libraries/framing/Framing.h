@@ -31,7 +31,7 @@ class Framing
     
     void setTimout(double timeout); //Set timeout for serial communication
     void sendFramedData(unsigned char* data, int length, char type); //Frame data with flag and unsigned char stuffing
-    void receiveFramedData(unsigned char* data, int& length, int& crc_valid); //Receive framed data through serial and unframe it
+    void receiveFramedData(unsigned char* data, int& length, int& crc_valid, int& seq, int& dataType); //Receive framed data through serial and unframe it
 };
 
 #endif
