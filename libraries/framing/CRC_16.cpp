@@ -36,6 +36,9 @@ void CRC_16::next_databyte(char databyte) {
 	m_remainder=(m_remainder<<1)|((databyte>>i)&0x01);
 	if ((m_remainder>>16)==0x01)
 		m_remainder=m_remainder^m_crc;
+  
+  //Serial.println(m_remainder);
+  
   } 
 
   	//Serial.write("1");

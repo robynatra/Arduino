@@ -6,20 +6,21 @@
 
   
 char* testPackets[3];
-rtsp_protocol protocol = rtsp_protocol();
-rtsp r = rtsp(protocol);
 
 void setup() {  
   // put your setup code here, to run once:
   Serial.begin(115200);
 
-  testPackets[0] = "SETUP rtsp://example.com/foo/bar/baz.rm RTSP/1.0\r\n\r\nCSeq: 302\r\nTransport: RTP/AVP;unicast;client_port=4588-4589";
+  testPackets[0] =   "SETUP rtsp://example.com/foo/bar/baz.rm RTSP/1.0\r\n\r\nCSeq: 302\r\nTransport: RTP/AVP;unicast;client_port=4588-4589";
   //testPackets[0] = "PLAY rtsp://audio.example.com/audio RTSP/1.0\r\nCSeq: 835\r\nSession: 12345678\r\nRange: npt=10-15";   
   //testPackets[0] = "DESCRIBE rtsp://server.example.com/fizzle/foo RTSP/1.0\r\nCSeq: 312\r\nAccept: application/sdp, application/rtsl, application/mheg";   
 }
 
 void loop() {
   Serial.println("Start Main Loop");
+
+  rtsp_protocol protocol = rtsp_protocol();
+  rtsp r = rtsp(protocol);
 
   /*
   Serial.print("Method: ");
@@ -37,7 +38,7 @@ void loop() {
   r.testFunc(); 
 */
   
-    r.parseRtspPackage(testPackets[0]);
+    r.parseRtspPackage(testPackets[0], 117);
 
     if(r.getMethod() == RTSP_METHOD_SETUP)
     {
@@ -56,7 +57,6 @@ void loop() {
       r.appendCSeqHeader(r.getCSeq());
       r.appendSessionHeader(r.getSessionID());
       Serial.println(r.getResponse());
-      
     }
     else
     if(r.getMethod() == RTSP_METHOD_DESCRIBE)

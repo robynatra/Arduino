@@ -41,7 +41,7 @@ int rtsp::parseRequestLine(char* thisline)
 	// Check URI
 	{
 		// Now check for a method
-		for(int i=0;i<RTSP_METHOD_COUNT;i++)
+		for(int i=0;i<=RTSP_METHOD_COUNT;i++)
 		{
 			char* pmethod;
 			pmethod = strstr(parts[0],_protocol.getMethod(i));
@@ -116,7 +116,7 @@ int rtsp::parseHeaderLine(char* thisline)
 	return 0;
 }
 
-int rtsp::parseRtspPackage(char Buf[]) //bool bReq
+int rtsp::parseRtspPackage(char Buf[], int length) //bool bReq
 {
     int ret = 0;
     //ch	ar* saLine[20][50];
@@ -124,16 +124,19 @@ int rtsp::parseRtspPackage(char Buf[]) //bool bReq
 	char* line[MAXLINES];
 	char* prequest;
 	int  bRequest;
-	
-    //int theHeader = 0;
+
+    //Buf[length] = 0;
+	//int theHeader = 0;
 
 	//Serial.println("..");
 	//Serial.println(Buf);
 
-	//if(debug) Serial.println("..");
-	
+	//Serial.println(".");
+
 	// First split the package by linefeed
 	line[0] = strtok(Buf, "\n");
+
+	//Serial.write(line[0]);
 
 	int lineCount=0;
 	while (line[lineCount]!=NULL) {
@@ -141,16 +144,25 @@ int rtsp::parseRtspPackage(char Buf[]) //bool bReq
 		line[lineCount] = strtok(NULL, "\n");
 	}
 	
+	//Serial.print(length);
+	//Serial.print(lineCount);
+	//Serial.print(".");
+	//Serial.write(line[1]);
+
 	// Now we have lineCount lines stored in line
 	//for(int j=0;j<lineCount;j++)
-	//Serial.println(line[j]);
+	//{
+	//	Serial.print("_");
+	//	Serial.print(line[j]);
+	//}
 
 	// Check if first line is a request
 	prequest = strstr(line[0], "RTSP/1.0");
 
+	//Serial.write(0);
 	if(prequest)
 	{
-		//if(debug) Serial.println("Have a request");
+		if(debug) Serial.println("Have a request");
 		//Request-Line = Method SP Request-URI SP RTSP-Version CRLF
 	
 		//if(this is a bad request)
@@ -327,6 +339,7 @@ void rtsp::appendDateHeader()
     int ret = 0;
 	//Time
 
+/*
 	// digital clock display of the time
 	Serial.print(hour());
 	printDigits(minute());
@@ -337,7 +350,7 @@ void rtsp::appendDateHeader()
 	Serial.print(month());
 	Serial.print(" ");
 	Serial.print(year()); 
-	Serial.println(); 
+	Serial.println(); */
 
 /*
 	char toSend[MAX_HEADER_LENGTH-1];
@@ -363,6 +376,13 @@ char* rtsp::getResponse()
 	//Serial.println("Current transport value: ");
 	//Serial.println(_transport);
 	return _responseBuff;
+}
+
+int rtsp::getResponseLength()
+{
+	//Serial.println("Current transport value: ");
+	//Serial.println(_transport);
+	return _responseBuffLen;
 }
 
 void rtsp::fillToSend(char* toSend, char* fromProtocol, int max)

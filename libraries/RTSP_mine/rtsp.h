@@ -31,7 +31,7 @@ class rtsp
 	
 	// Public Methods
 	
-	int 	parseRtspPackage(char buf[]); //bool bReq
+	int 	parseRtspPackage(char buf[], int length); //bool bReq
 	int 	getCSeq();
 	void 	setCSeq(int thisCSeq);
 	int 	getMethod();
@@ -43,6 +43,7 @@ class rtsp
 	char* 	getTransport();
 	void 	setTransport(char* thisTransport);
 	char* 	getResponse();
+	int 	getResponseLength();
 	
 	// Methods to creates a response
 	void 	putRequestLine(int method, const char* Uri);
