@@ -30,7 +30,7 @@ struct Olimexino328_packet
 //http://www.arduino.cc/playground/Main/FlexiTimer2
 
 // All definitions
-#define NUMCHANNELS 6
+#define NUMCHANNELS 1  // 6
 #define HEADERLEN 4
 #define PACKETLEN (NUMCHANNELS * 2 + HEADERLEN + 1)
 #define SAMPFREQ 1                      // ADC sampling rate 256
@@ -40,22 +40,46 @@ struct Olimexino328_packet
 #define LED1  13
 #define CAL_SIG 9
 
+// RTP definitions
+#define RTPHeaderLen 24
+#define RTPPACKETLEN RTPHeaderLen + PACKETLEN + 3  // RTP Packet length plus the length of the data from the ECG plus padding of max 3 bytes
+#define RTPVersion 2
+#define RTPCC 1
+#define RTPPayloadType 1
+
+// RTP Byte 0
+#define RTPVersionMask 0xC0        // 11000000
+#define RTPPaddingMask 0x20        // 00100000
+#define RTPExtensionMask 0x20      // 00010000
+#define RTPCSRCMask 0x20           // 00001111
+
+// RTP Byte 1
+#define RTPMarkerBitMask 0x80      // 10000000
+#define RTPPayloadTypeMask 0x7F    // 01111111
 
 // Global constants and variables
 //volatile unsigned char TXBuf[PACKETLEN];  //The transmission packet
-volatile unsigned char TXBuf[PACKETLEN];  //The transmission packet
-volatile unsigned char TXIndex;           //Next byte to write in the transmission packet.
-volatile unsigned char CurrentCh;         //Current channel being sampled.
-volatile unsigned char counter = 0;	  //Additional divider used to generate CAL_SIG
-volatile unsigned int ADC_Value = 0;	  //ADC current value
+volatile unsigned char TXBuf[PACKETLEN];    //The transmission packet
+volatile unsigned char TXIndex;             //Next byte to write in the transmission packet.
+volatile unsigned char CurrentCh;           //Current channel being sampled.
+volatile unsigned char counter = 0;	    //Additional divider used to generate CAL_SIG
+volatile unsigned int ADC_Value = 0;	    //ADC current value
 
+//RTP Variables
+//unsigned char RTPBuff[RTPPACKETLEN];        //The RTP transmission packet
+unsigned char RTPBuff[100];        //The RTP transmission packet
+volatile unsigned int RTPSeq     = 0;       // 16bit int 0-65,535
+int  RTPMarkerBit                = 0;
+long RTPTimeStamp                = 1000;    // 32bit timestamp..
+int RTPCSRC                      = 0;        // Count of contributing sources = 0
+long RTPSSRC                     = 0;        // Synchronization source identifer - should generate this using similar method as defined in RFC3550 (TBD).
 
 // Framing variables
-Framing framing;                          // JD: Add this framing object to package up data for transfer
-const char type_rtp = '1';
-const char type_rtsp = '2';
-const char type_ack = '3';
-const char type_message = '4';
+Framing framing;                            // JD: Add this framing object to package up data for transfer
+const char type_rtp       = '1';
+const char type_rtsp      = '2';
+const char type_ack       = '3';
+const char type_message   = '4';
 
 // IO constants/variables
 int io_taskstarted = 0;
@@ -83,6 +107,11 @@ volatile unsigned char RTSP_RXBUF[1000];  // This buffer contains RTSP commands 
 
 char* testPackets[3];
 //rtsp_protocol protocol = rtsp_protocol();
+
+
+
+
+
 
 //~~~~~~~~~~
 // Functions
@@ -160,7 +189,9 @@ void setup() {
  FlexiTimer2::set(TIMER2VAL, Timer2_Overflow_ISR);
  FlexiTimer2::start();
  
- // Serial Port
+
+
+// Serial Port
  Serial.begin(9600);
  //Serial.begin(57600);
  //Set speed to 57600 bps
@@ -194,24 +225,81 @@ void Timer2_Overflow_ISR()
   Toggle_LED1();
   
   //Read the 6 ADC inputs and store current values in Packet
-  for(CurrentCh=0;CurrentCh<6;CurrentCh++){
+  for(CurrentCh=0;CurrentCh<NUMCHANNELS;CurrentCh++){
     ADC_Value = analogRead(CurrentCh);
     TXBuf[((2*CurrentCh) + HEADERLEN)] = ((unsigned char)((ADC_Value & 0xFF00) >> 8));	// Write High Byte
     TXBuf[((2*CurrentCh) + HEADERLEN + 1)] = ((unsigned char)(ADC_Value & 0x00FF));	// Write Low Byte
   }
+  // Increment the packet counter
+  TXBuf[3]++;			
 
-  unsigned char toSend[17];
+  //unsigned char toSend[17];
   //TxBuff
-  for(int i=0;i<PACKETLEN;i++)
-  toSend[i] = TXBuf[i];
+  //for(int i=0;i<PACKETLEN;i++)
+  //RTPPacketData[i] = TXBuf[i];
   
   // Send the datat to the client if requested.
   // Could change this to a playout buffer
   if(RSTPCurrentState==RTSPState_Playing)
-  framing.sendFramedData(toSend,17, type_rtp);
-  
-  // Increment the packet counter
-  TXBuf[3]++;			
+  // Package up data in an RTP packet and send
+  {
+    /*
+    0               1               2               3
+    0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |V=2|P|X|  CC   |M|     PT      |       sequence number         |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                           timestamp                           |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |           synchronization source (SSRC) identifier            |
+    +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+    |            contributing source (CSRC) identifiers             |
+    |                             ....                              |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    */
+
+    if(RTPSeq<65535)
+    RTPSeq++;
+    else
+    RTPSeq=0;
+    
+    RTPMarkerBit = 0;
+    RTPTimeStamp = 1000;
+    RTPCSRC = 0;            // no contributing sources other than the synchronisation source
+    RTPSSRC = 1234;         // synchronization source - should be a random number
+    
+    //Write packet header and footer
+     RTPBuff[0]  = (RTPVersion<<6) | (RTPCSRC & RTPCSRCMask);                         // Set Version bits (V) and CSCRC bits (CC). Set Padding bit (P) later if necessary. Leave extension bit (X) out for now.
+     RTPBuff[1]  = ((1<<7)&RTPMarkerBit) | (RTPPayloadType&RTPPayloadTypeMask);       // Set marker bit (M) and set payload type;
+     RTPBuff[2]  = (RTPSeq>>8) && 0xFF;     // Sequence number hi
+     RTPBuff[3]  = RTPSeq & 0xFF;           // Sequence number lo
+     RTPBuff[4]  = (RTPTimeStamp>>24) & 0xff;       // RTP TimesStamp byte 0
+     RTPBuff[5]  = (RTPTimeStamp>>16) & 0xff;       // RTP TimesStamp byte 1
+     RTPBuff[6]  = (RTPTimeStamp>>8) & 0xff;        // RTP TimesStamp byte 2
+     RTPBuff[7]  = (RTPTimeStamp) & 0xff;           // RTP TimesStamp byte 3
+     RTPBuff[8]  = (RTPSSRC>>24) & 0xff;       // SSRC byte 0
+     RTPBuff[9]  = (RTPSSRC>>16) & 0xff;       // SSRC byte 1
+     RTPBuff[10] = (RTPSSRC>>8) & 0xff;        // SSRC byte 2
+     RTPBuff[11] = (RTPSSRC) & 0xff;           // SSRC byte 3
+     
+     for(int i=12;i< 12 + 2 * NUMCHANNELS + HEADERLEN; i++)
+     {
+       RTPBuff[i] = TXBuf[i-12];           // SSRC byte 3
+     }
+
+     //unsigned char  toSend[20];
+     //for(int i=0;i<7;i++)
+     //{
+     //  toSend[i] = TXBuf[i];
+     //}
+     
+     
+     //framing.sendFramedData(toSend,17, type_rtp);
+     framing.sendFramedData((unsigned char*) RTPBuff, 12 + (2 * NUMCHANNELS) + HEADERLEN+1, type_rtp);
+     //framing.sendFramedData(toSend,7, type_rtp);
+     //framing.sendFramedData((unsigned char*) TXBuf, 2 * NUMCHANNELS + HEADERLEN -1, type_rtp);
+  }
+
   
   // Generate the CAL_SIGnal
   counter++;		// increment the devider counter
@@ -269,8 +357,8 @@ void io_task()
 
   //the values 1, 2, 3 have been sent through serial
   framing.receiveFramedData(input_buff, input_length, crc_valid, framing_seq, dataType);
-  //the input buffer has been filled with incoming serial data
-
+  // the input buffer has been filled with incoming serial data
+  // the data will be in input_buff[3] -> input_buff[input_length]
 
  if((crc_valid!=0) && (input_length>0))
   {
@@ -292,6 +380,7 @@ void io_task()
     //{
     //  Serial.write(input_buff[i]);
    // }
+   
     switch(dataType)
     {
       case type_rtp:
@@ -310,121 +399,148 @@ void io_task()
         //framing.sendFramedData(message,4, type_message);
 
 
-    // Block access to this section
-    //rtsp_buf_ready = 0;
-
-    rtsp_protocol protocol = rtsp_protocol();
-    rtsp r = rtsp(protocol);
-
-    for(int i=0;i<input_length;i++)
-    Serial.write(input_buff[i]);
-
-    //r.parseRtspPackage(testPackets[0], 65);
-    r.parseRtspPackage((char*)input_buff, input_length);
-
-    //Serial.write(r.getMethod());
-
-    //char * test = "PLAY rtsp://example.com/ecg.ps RTSP/1.0\r\n";
-    //r.parseRtspPackage(test, 43);
-
-    //Serial.write(r.getMethod());
-
-
-    if(r.getMethod() == RTSP_METHOD_SETUP)
-    {
-        unsigned char message1[ ] = "2";
-        framing.sendFramedData(message1,1, type_message);
-      RSTPCurrentState=RTSPState_Ready;
-      
-      //Serial.print("M=");
-      //Serial.println(protocol.getMethod(r.getMethod()));
-      //Serial.print("U=");
-      //Serial.println(r.getURI());f
-      //Serial.print("Sq=");
-      //Serial.println(r.getCSeq());
-      //Serial.print("SID=");
-      //Serial.println(r.getSessionID());
-      //Serial.print("t=");
-      //Serial.println(r.getTransport());
-      
-        unsigned char message[] = {framing_seq>>8,  framing_seq, RSTPCurrentState};
-        framing.sendFramedData(message,7, type_ack);
-
-      r.putStatusLine(RTSP_STATUS_SuccessCreated);
-      //r.appendCSeqHeader(r.getCSeq());
-      //r.appendSessionHeader(r.getSessionID());
-      //Serial.println(r.getResponse());
-
-      framing.sendFramedData((unsigned char *) r.getResponse(),r.getResponseLength(), type_rtsp);
-    }
-    else
-    if(r.getMethod() == RTSP_METHOD_PLAY)
-    {
-        unsigned char message1[ ] = "3";
-        framing.sendFramedData(message1,1, type_message);
-      RSTPCurrentState=RTSPState_Playing;
-      
-        unsigned char message[] = {framing_seq>>8,  framing_seq, RSTPCurrentState};
-        framing.sendFramedData(message,7, type_ack);
-
-      //Serial.print("M=");
-      //Serial.println(protocol.getMethod(r.getMethod()));
-      //Serial.print("U=");
-      //Serial.println(r.getURI());
-      //Serial.print("Sq=");
-      //Serial.println(r.getCSeq());
-      //Serial.print("SID=");
-      //Serial.println(r.getSessionID());
-      //Serial.print("t=");
-      //Serial.println(r.getTransport());
-      
-      
-      //r.putStatusLine(RTSP_STATUS_SuccessOK);
-      //r.appendCSeqHeader(r.getCSeq());
-      //r.appendSessionHeader(r.getSessionID());
-      //Serial.println(r.getResponse());
-
-      //framing.sendFramedData((unsigned char *) r.getResponse(),r.getResponseLength(), type_rtsp);
-    }
-    else
-    if(r.getMethod() == RTSP_METHOD_TEARDOWN)
-    {
-        unsigned char message1[ ] = "4";
-        framing.sendFramedData(message1,1, type_message);
-      RSTPCurrentState=RTSPState_Init;
-      
-        unsigned char message[] = {framing_seq>>8,  framing_seq, RSTPCurrentState};
-        framing.sendFramedData(message,7, type_ack);
-
-      r.putStatusLine(RTSP_STATUS_SuccessOK);
-      //r.appendCSeqHeader(r.getCSeq());
-      //r.appendSessionHeader(r.getSessionID());
-      //Serial.println(r.getResponse());
-
-      framing.sendFramedData((unsigned char *) r.getResponse(),r.getResponseLength(), type_rtsp);
-    }
-    else
-    if(r.getMethod() == RTSP_METHOD_DESCRIBE)
-    {
-        unsigned char message1[ ] = "5";
-        framing.sendFramedData(message1,1, type_message);
-      //RSTPCurrentState=RTSPState_Init;
-      
-        unsigned char message[] = {framing_seq>>8,  framing_seq, RSTPCurrentState};
-        framing.sendFramedData(message,7, type_ack);
-
-      //r.putStatusLine(RTSP_STATUS_SuccessOK);
-      //r.appendCSeqHeader(r.getCSeq());
-      //r.appendSessionHeader(r.getSessionID());
-      //Serial.println(r.getResponse());
-
-      //framing.sendFramedData((unsigned char *) r.getResponse(),r.getResponseLength(), type_rtsp);
-    }
-    else
-    {
-        //unsigned char message1[ ] = "6";
-        //framing.sendFramedData(message1,1, type_message);
-    }
+        // Block access to this section
+        //rtsp_buf_ready = 0;
+        
+        rtsp_protocol protocol = rtsp_protocol();
+        rtsp r = rtsp(protocol);
+        
+        //for(int i=0;i<input_length;i++)
+        //Serial.write(input_buff[i]);
+        
+        //r.parseRtspPackage(testPackets[0], 65);
+        if(r.parseRtspPackage((char*)input_buff+3, input_length-3)!=-1)
+        {
+          
+          
+          //Serial.write(r.getMethod());
+          
+          //char * test = "PLAY rtsp://example.com/ecg.ps RTSP/1.0\r\n";
+          //r.parseRtspPackage(test, 43);
+          
+          //Serial.write(r.getMethod());
+          
+          
+          if(r.getMethod() == RTSP_METHOD_SETUP)
+          {
+            RSTPCurrentState=RTSPState_Ready;
+            
+            //Serial.print("M=");
+            //Serial.println(protocol.getMethod(r.getMethod()));
+            //Serial.print("U=");
+            //Serial.println(r.getURI());f
+            //Serial.print("Sq=");
+            //Serial.println(r.getCSeq());
+            //Serial.print("SID=");
+            //Serial.println(r.getSessionID());
+            //Serial.print("t=");
+            //Serial.println(r.getTransport());
+            
+              unsigned char message[] = {framing_seq>>8,  framing_seq, RSTPCurrentState};
+              framing.sendFramedData(message,7, type_ack);
+          
+            r.putStatusLine(RTSP_STATUS_SuccessCreated);
+            //r.appendCSeqHeader(r.getCSeq());
+            //r.appendSessionHeader(r.getSessionID());
+            //Serial.println(r.getResponse());
+          
+            framing.sendFramedData((unsigned char *) r.getResponse(),r.getResponseLength(), type_rtsp);
+          }
+          else
+          if(r.getMethod() == RTSP_METHOD_PLAY)
+          {
+            RSTPCurrentState=RTSPState_Playing;
+            
+              unsigned char message[] = {framing_seq>>8,  framing_seq, RSTPCurrentState};
+              framing.sendFramedData(message,7, type_ack);
+          
+            //Serial.print("M=");
+            //Serial.println(protocol.getMethod(r.getMethod()));
+            //Serial.print("U=");
+            //Serial.println(r.getURI());
+            //Serial.print("Sq=");
+            //Serial.println(r.getCSeq());
+            //Serial.print("SID=");
+            //Serial.println(r.getSessionID());
+            //Serial.print("t=");
+            //Serial.println(r.getTransport());
+            
+            
+            //r.putStatusLine(RTSP_STATUS_SuccessOK);
+            //r.appendCSeqHeader(r.getCSeq());
+            //r.appendSessionHeader(r.getSessionID());
+            //Serial.println(r.getResponse());
+          
+            //framing.sendFramedData((unsigned char *) r.getResponse(),r.getResponseLength(), type_rtsp);
+          }
+          else
+          if(r.getMethod() == RTSP_METHOD_PAUSE)
+          {
+            RSTPCurrentState=RTSPState_Ready;
+            
+              unsigned char message[] = {framing_seq>>8,  framing_seq, RSTPCurrentState};
+              framing.sendFramedData(message,7, type_ack);
+          
+            //Serial.print("M=");
+            //Serial.println(protocol.getMethod(r.getMethod()));
+            //Serial.print("U=");
+            //Serial.println(r.getURI());
+            //Serial.print("Sq=");
+            //Serial.println(r.getCSeq());
+            //Serial.print("SID=");
+            //Serial.println(r.getSessionID());
+            //Serial.print("t=");
+            //Serial.println(r.getTransport());
+            
+            
+            //r.putStatusLine(RTSP_STATUS_SuccessOK);
+            //r.appendCSeqHeader(r.getCSeq());
+            //r.appendSessionHeader(r.getSessionID());
+            //Serial.println(r.getResponse());
+          
+            //framing.sendFramedData((unsigned char *) r.getResponse(),r.getResponseLength(), type_rtsp);
+          }
+          else
+          if(r.getMethod() == RTSP_METHOD_TEARDOWN)
+          {
+            RSTPCurrentState=RTSPState_Init;
+            
+              unsigned char message[] = {framing_seq>>8,  framing_seq, RSTPCurrentState};
+              framing.sendFramedData(message,7, type_ack);
+          
+            r.putStatusLine(RTSP_STATUS_SuccessOK);
+            //r.appendCSeqHeader(r.getCSeq());
+            //r.appendSessionHeader(r.getSessionID());
+            //Serial.println(r.getResponse());
+          
+            framing.sendFramedData((unsigned char *) r.getResponse(),r.getResponseLength(), type_rtsp);
+          }
+          else
+          if(r.getMethod() == RTSP_METHOD_DESCRIBE)
+          {
+            //RSTPCurrentState=RTSPState_Init;
+            
+              unsigned char message[] = {framing_seq>>8,  framing_seq, RSTPCurrentState};
+              framing.sendFramedData(message,7, type_ack);
+          
+            //r.putStatusLine(RTSP_STATUS_SuccessOK);
+            //r.appendCSeqHeader(r.getCSeq());
+            //r.appendSessionHeader(r.getSessionID());
+            //Serial.println(r.getResponse());
+          
+            //framing.sendFramedData((unsigned char *) r.getResponse(),r.getResponseLength(), type_rtsp);
+          }
+        }
+        else
+        // failed to parse the request package
+        {
+            r.putStatusLine(RTSP_STATUS_ClientBadRequest);
+            //r.appendCSeqHeader(r.getCSeq());
+            //r.appendSessionHeader(r.getSessionID());
+            //Serial.println(r.getResponse());
+          
+            framing.sendFramedData((unsigned char *) r.getResponse(),r.getResponseLength(), type_rtsp);
+        }
 
 
         break;

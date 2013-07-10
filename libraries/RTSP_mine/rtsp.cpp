@@ -125,31 +125,25 @@ int rtsp::parseRtspPackage(char Buf[], int length) //bool bReq
 	char* prequest;
 	int  bRequest;
 
-    //Buf[length] = 0;
-	//int theHeader = 0;
+	//Serial.print("_");
+	//for(int j=0;j<length;j++)
+	//{
+	//	Serial.print(Buf[j]);
+	//}
 
-	//Serial.println("..");
-	//Serial.println(Buf);
-
-	//Serial.println(".");
-
-	// First split the package by linefeed
+	// First split the package by linefeed. Note - start on the 4th character in the buffer
 	line[0] = strtok(Buf, "\n");
 
 	//Serial.write(line[0]);
 
 	int lineCount=0;
 	while (line[lineCount]!=NULL) {
+	// Store the lines in the line array
 		lineCount++;
 		line[lineCount] = strtok(NULL, "\n");
 	}
+	// Total of lineCount lines
 	
-	//Serial.print(length);
-	//Serial.print(lineCount);
-	//Serial.print(".");
-	//Serial.write(line[1]);
-
-	// Now we have lineCount lines stored in line
 	//for(int j=0;j<lineCount;j++)
 	//{
 	//	Serial.print("_");
