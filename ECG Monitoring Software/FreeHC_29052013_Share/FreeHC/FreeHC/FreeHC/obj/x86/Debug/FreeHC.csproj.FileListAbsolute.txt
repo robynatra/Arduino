@@ -1,0 +1,26 @@
+C:\vs2010\Products\FreeHC\FreeHC\FreeHC\obj\x86\Debug\ResolveAssemblyReference.cache
+C:\vs2010\Products\FreeHC\FreeHC\FreeHC\obj\x86\Debug\FreeHC.Form1.resources
+C:\vs2010\Products\FreeHC\FreeHC\FreeHC\obj\x86\Debug\FreeHC.Properties.Resources.resources
+C:\vs2010\Products\FreeHC\FreeHC\FreeHC\obj\x86\Debug\FreeHC.RealTimeFilterView.resources
+C:\vs2010\Products\FreeHC\FreeHC\FreeHC\obj\x86\Debug\GenerateResource.read.1.tlog
+C:\vs2010\Products\FreeHC\FreeHC\FreeHC\obj\x86\Debug\GenerateResource.write.1.tlog
+C:\vs2010\Products\FreeHC\FreeHC\FreeHC\bin\Debug\FreeHC.exe
+C:\vs2010\Products\FreeHC\FreeHC\FreeHC\bin\Debug\FreeHC.pdb
+C:\vs2010\Products\FreeHC\FreeHC\FreeHC\obj\x86\Debug\FreeHC.exe
+C:\vs2010\Products\FreeHC\FreeHC\FreeHC\obj\x86\Debug\FreeHC.pdb
+C:\vs2010\Products\FreeHC\FreeHC\FreeHC\obj\x86\Debug\FreeHC.ComSelect.resources
+C:\vs2010\Products\FreeHC\FreeHC\FreeHC\bin\Debug\FreeHC.exe.config
+C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\bin\Debug\FreeHC.exe.config
+C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\obj\x86\Debug\FreeHC.exe
+C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\obj\x86\Debug\FreeHC.pdb
+C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\bin\Debug\FreeHC.exe
+C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\bin\Debug\FreeHC.pdb
+C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\obj\x86\Debug\FreeHC.csprojResolveAssemblyReference.cache
+C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\obj\x86\Debug\FreeHC.ComSelect.resources
+C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\obj\x86\Debug\FreeHC.Form1.resources
+C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\obj\x86\Debug\FreeHC.Properties.Resources.resources
+C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\obj\x86\Debug\FreeHC.RealTimeFilterView.resources
+C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\obj\x86\Debug\FreeHC.csproj.GenerateResource.Cache
+C:\Users\james delaney\Documents\Arduino\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\bin\Debug\FreeHC.exe.config
+C:\Users\james delaney\Documents\Arduino\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\obj\x86\Debug\FreeHC.exe
+C:\Users\james delaney\Documents\Arduino\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\obj\x86\Debug\FreeHC.pdb

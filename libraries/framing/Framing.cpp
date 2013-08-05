@@ -26,7 +26,7 @@ const unsigned char Framing::m_STX=0x02;
 const unsigned char Framing::m_ETX=0x03;
 const unsigned char Framing::m_DLE=0x10;
 
-int iSendSeq = 2;
+int iSendSeq = 14;
 
 //Constructor for Framing
 Framing::Framing() {
@@ -38,6 +38,7 @@ void Framing::setTimout(double timeout) {
 	m_timeout=timeout;
 }
 
+
 //Private method for increasing sequence number
 void increaseSequenceNumber() 
 {
@@ -48,11 +49,12 @@ void increaseSequenceNumber()
 }
 
 
+
 //Public method for framing data
 void Framing::sendFramedData(unsigned char* data, int length, char type) {
   int buf_index=0;
   unsigned char framed_data[100];
-  unsigned char fixed_framed_data[100];
+  unsigned char fixed_framed_data[200];
 
   CRC_16 createCRC;
 
@@ -68,26 +70,70 @@ void Framing::sendFramedData(unsigned char* data, int length, char type) {
   //Serial.println((iSendSeq>>8));
 
 	//Put in sequence number hi byte
-	framed_data[buf_index] = (byte) (iSendSeq>>8);
-	buf_index++;
-	createCRC.next_databyte((byte) (iSendSeq>>8));
+	//framed_data[buf_index] = (byte) (iSendSeq>>8);
+	//buf_index++;
+	//createCRC.next_databyte((byte) (iSendSeq>>8));
 
-  //Serial.print("Sequence Number Lo: ");
-  //Serial.println((iSendSeq));
+	// Add sequence number hi byte and byte stuff if necessary
+	if((byte) (iSendSeq>>8)==m_DLE) {
+	  framed_data[buf_index]=m_DLE;
+	  buf_index++;
+	  
+	  framed_data[buf_index]=(byte) (iSendSeq>>8);
+	  buf_index++;
+	  createCRC.next_databyte((byte) (iSendSeq>>8));
+	}
+	else {
+	  framed_data[buf_index]=(byte) (iSendSeq>>8);
+	  buf_index++;
+	  createCRC.next_databyte((byte) (iSendSeq>>8));
+	}
+
+	// Add sequence number lo byte and byte stuff if necessary
+	if((byte) (iSendSeq)==m_DLE) {
+	  framed_data[buf_index]=m_DLE;
+	  buf_index++;
+	  
+	  framed_data[buf_index]=(byte) (iSendSeq);
+	  buf_index++;
+	  createCRC.next_databyte((byte) (iSendSeq));
+	}
+	else {
+	  framed_data[buf_index]=(byte) (iSendSeq);
+	  buf_index++;
+	  createCRC.next_databyte((byte) (iSendSeq));
+	}
+
+	// Add type byte and byte stuff if necessary
+	if(type==m_DLE) {
+	  framed_data[buf_index]=m_DLE;
+	  buf_index++;
+	  
+	  framed_data[buf_index]= (type);
+	  buf_index++;
+	  createCRC.next_databyte((type));
+	}
+	else {
+	  framed_data[buf_index]=(type);
+	  buf_index++;
+	  createCRC.next_databyte( (type));
+	}
+	//Serial.print("Sequence Number Lo: ");
+	//Serial.println((iSendSeq));
 	//Put in sequence number lo byte
-	framed_data[buf_index] = (byte) (iSendSeq);
-	buf_index++;
-	createCRC.next_databyte((byte) (iSendSeq));
+	//framed_data[buf_index] = (byte) (iSendSeq);
+	//buf_index++;
+	//createCRC.next_databyte((byte) (iSendSeq));
   
-  //Serial.print("Type: ");
-  //Serial.println(type);
+	//Serial.print("Type: ");
+	//Serial.println(type);
 
-  //Put in type unsigned char
-  framed_data[buf_index] = type;
-  buf_index++;
+	//Put in type unsigned char
+	//framed_data[buf_index] = type;
+	//buf_index++;
+	//createCRC.next_databyte(type);
 
-  createCRC.next_databyte(type);
-  
+	
   //Send data with unsigned char stuffing - Also calculate CRC (ignore stuffing)
   for (int i=0; i<length; i++) {
     if(data[i]==m_DLE) {
@@ -107,7 +153,7 @@ void Framing::sendFramedData(unsigned char* data, int length, char type) {
       createCRC.next_databyte(data[i]);
     }
   }
-  
+    
   //Return CRC
   short CRC=createCRC.returnCRC_reset();
   
@@ -118,15 +164,12 @@ void Framing::sendFramedData(unsigned char* data, int length, char type) {
   framed_data[buf_index]=(unsigned char)((CRC>>8)&0xff);
   buf_index++;
   
-  
   if(framed_data[buf_index-1]==m_DLE) {
 	framed_data[buf_index]=m_DLE;
 	buf_index++;
   }
   framed_data[buf_index]=(unsigned char)(CRC&0xff);
   buf_index++;
-
-
 
   if(framed_data[buf_index-1]==m_DLE) {
 	framed_data[buf_index]=m_DLE;
@@ -160,8 +203,42 @@ void Framing::sendFramedData(unsigned char* data, int length, char type) {
 			count++;
 		}
 	}
-
 	Serial.write(fixed_framed_data, count);
+
+	/*
+	for(int i=0;i<64;i++)
+	{
+		fixed_framed_data[i] = '1';
+	}
+	Serial.write(fixed_framed_data, 50);
+	Serial.write(fixed_framed_data, 20);
+	*/
+	
+	//Serial.print(fixed_framed_data);
+	/*Serial.println(count, DEC);
+  
+	unsigned char printout[255];
+	int printcount=0;
+	for(int i=0;i<=count;i++)
+	{
+		printout[printcount]=fixed_framed_data[i];
+		printcount++;
+		printout[printcount]=' ';
+		printcount++;
+	}
+
+	for(int i=0;i<=printcount;i++)
+	{
+		if(i<=printcount)
+		{
+			if(printout[i]==' ')
+			{
+			//Serial.print(printout[i], HEX);
+			}
+			else
+			Serial.print(printout[i], HEX);
+		}
+	}*/
   }
 
 //Public method for unframing and returning data

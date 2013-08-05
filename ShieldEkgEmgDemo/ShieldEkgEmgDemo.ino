@@ -64,6 +64,8 @@ volatile unsigned char CurrentCh;         //Current channel being sampled.
 volatile unsigned char counter = 0;	  //Additional divider used to generate CAL_SIG
 volatile unsigned int ADC_Value = 0;	  //ADC current value
 
+int tempcount = 0;
+
 //~~~~~~~~~~
 // Functions
 //~~~~~~~~~~
@@ -165,6 +167,23 @@ void Timer2_Overflow_ISR()
   //Read the 6 ADC inputs and store current values in Packet
   for(CurrentCh=0;CurrentCh<6;CurrentCh++){
     ADC_Value = analogRead(CurrentCh);
+    /*
+    if(CurrentCh==0)
+    {
+      tempcount++;
+      if(tempcount==12)
+      {
+        Serial.println(ADC_Value, DEC);
+        tempcount=0;
+      }
+      else
+      {
+        Serial.print(ADC_Value, DEC);
+        Serial.print(" ");
+      }
+    }*/
+    
+    
     TXBuf[((2*CurrentCh) + HEADERLEN)] = ((unsigned char)((ADC_Value & 0xFF00) >> 8));	// Write High Byte
     TXBuf[((2*CurrentCh) + HEADERLEN + 1)] = ((unsigned char)(ADC_Value & 0x00FF));	// Write Low Byte
   }
@@ -176,6 +195,8 @@ void Timer2_Overflow_ISR()
     //Serial.write(
     
   }
+
+  //Serial.print(TXBuf[4], DEC);
   
   // Increment the packet counter
   TXBuf[3]++;			
@@ -183,11 +204,14 @@ void Timer2_Overflow_ISR()
   // Generate the CAL_SIGnal
   counter++;		// increment the devider counter
   if(counter == 12){	// 250/12/2 = 10.4Hz ->Toggle frequency
+  
     counter = 0;
     toggle_GAL_SIG();	// Generate CAL signal with frequ ~10Hz
   }
+  else
+  {
+  }
 }
-
 
 /****************************************************/
 /*  Function name: loop                             */

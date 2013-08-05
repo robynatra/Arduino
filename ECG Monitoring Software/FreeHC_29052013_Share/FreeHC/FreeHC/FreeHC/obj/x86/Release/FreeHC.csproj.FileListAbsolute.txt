@@ -1,0 +1,10 @@
+C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\bin\Release\FreeHC.exe.config
+C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\bin\Release\FreeHC.exe
+C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\bin\Release\FreeHC.pdb
+C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\obj\x86\Release\FreeHC.ComSelect.resources
+C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\obj\x86\Release\FreeHC.Form1.resources
+C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\obj\x86\Release\FreeHC.Properties.Resources.resources
+C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\obj\x86\Release\FreeHC.RealTimeFilterView.resources
+C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\obj\x86\Release\FreeHC.csproj.GenerateResource.Cache
+C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\obj\x86\Release\FreeHC.exe
+C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\obj\x86\Release\FreeHC.pdb

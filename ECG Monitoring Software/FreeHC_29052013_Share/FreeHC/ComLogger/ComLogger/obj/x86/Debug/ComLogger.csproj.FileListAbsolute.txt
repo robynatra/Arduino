@@ -1,0 +1,9 @@
+C:\vs2010\Products\FreeHC\ComLogger\ComLogger\bin\Debug\ComLogger.exe
+C:\vs2010\Products\FreeHC\ComLogger\ComLogger\bin\Debug\ComLogger.pdb
+C:\vs2010\Products\FreeHC\ComLogger\ComLogger\obj\x86\Debug\ResolveAssemblyReference.cache
+C:\vs2010\Products\FreeHC\ComLogger\ComLogger\obj\x86\Debug\ComLogger.exe
+C:\vs2010\Products\FreeHC\ComLogger\ComLogger\obj\x86\Debug\ComLogger.pdb
+C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\ComLogger\ComLogger\obj\x86\Debug\ComLogger.exe
+C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\ComLogger\ComLogger\obj\x86\Debug\ComLogger.pdb
+C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\ComLogger\ComLogger\bin\Debug\ComLogger.exe
+C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\ComLogger\ComLogger\bin\Debug\ComLogger.pdb
