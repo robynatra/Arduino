@@ -33,7 +33,7 @@ struct Olimexino328_packet
 #define NUMCHANNELS 1  // 6
 #define FrameHeaderLen 0
 #define FRAMELEN (NUMCHANNELS * 2 + FrameHeaderLen)
-#define SAMPFREQ 100                      // ADC sampling rate 256
+#define SAMPFREQ 25                          // ADC sampling rate 256
 //#define SAMPFREQ 25                       // ADC sampling rate 256
 
 //#define SAMPFREQ 32                     // ADC sampling rate 256

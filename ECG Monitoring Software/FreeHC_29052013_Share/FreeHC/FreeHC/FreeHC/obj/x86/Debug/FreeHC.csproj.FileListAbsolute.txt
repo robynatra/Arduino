@@ -24,3 +24,6 @@ C:\Users\james delaney\Downloads\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\obj\
 C:\Users\james delaney\Documents\Arduino\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\bin\Debug\FreeHC.exe.config
 C:\Users\james delaney\Documents\Arduino\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\obj\x86\Debug\FreeHC.exe
 C:\Users\james delaney\Documents\Arduino\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\obj\x86\Debug\FreeHC.pdb
+C:\Users\james delaney\Documents\Arduino\ECG Monitoring Software\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\bin\Debug\FreeHC.exe.config
+C:\Users\james delaney\Documents\Arduino\ECG Monitoring Software\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\obj\x86\Debug\FreeHC.exe
+C:\Users\james delaney\Documents\Arduino\ECG Monitoring Software\FreeHC_29052013_Share\FreeHC\FreeHC\FreeHC\obj\x86\Debug\FreeHC.pdb
